@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+    <html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>学习成就达成</title>
+        <style>
+            body { margin: 0; overflow: hidden; background: #0f2137; font-family: 'Inter', sans-serif; }
+            #canvas-container { position: fixed; width: 100%; height: 100%; z-index: 0; }
+            .content { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; z-index: 100; color: white; }
+            .title-text { 
+                font-size: 5rem; 
+                margin-bottom: 0.5rem; 
+                opacity: 0; 
+                transform: translateY(30px); 
+                transition: all 1s ease-out;
+            }
+            .sub-text { 
+                font-size: 1.8rem; 
+                color: #88d4f9; 
+                opacity: 0; 
+                transform: translateY(30px); 
+                transition: all 1.2s ease-out 0.2s;
+            }
+        </style>
+    </head>
+    <body>
+        <canvas id="canvas-container"></canvas>
+        <div class="content">
+            <div class="title-text" id="mainTitle">恭喜你完成画布V1的学习</div>
+            <div class="sub-text" id="subTitle">请打开画布V2，开始自主实践之旅</div>
+            <div class="sub-text" id="encourageText">你的努力值得喝彩，继续加油吧！</div>
+        </div>
+
+        <script>
+            // 画布初始化
+            const canvas = document.getElementById('canvas-container');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            // 新增背景元素类型（共5种）
+            const backgroundElements = {
+                stars: Array.from({ length: 300 }, createStar),
+                bubbles: Array.from({ length: 120 }, createBubble),
+                sparkles: Array.from({ length: 200 }, createSparkle),
+                petals: Array.from({ length: 80 }, createPetal),
+                lightDots: Array.from({ length: 150 }, createLightDot)
+            };
+
+            // 元素创建函数
+            function createStar() {
+                return {
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    size: Math.random() * 1.5 + 0.5,
+                    speed: Math.random() * 0.6 + 0.3
+                };
+            }
+
+            function createBubble() {
+                return {
+                    x: Math.random() * canvas.width,
+                    y: canvas.height + Math.random() * 300,
+                    radius: Math.random() * 12 + 3,
+                    speed: Math.random() * 0.9 + 0.4,
+                    hue: Math.random() * 360
+                };
+            }
+
+            function createSparkle() {
+                return {
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    angle: Math.random() * Math.PI * 2,
+                    speed: Math.random() * 1.5 + 0.5,
+                    lifespan: Math.random() * 150 + 50,
+                    alpha: Math.random() * 0.8 + 0.2
+                };
+            }
+
+            function createPetal() {
+                return {
+                    x: Math.random() * canvas.width,
+                    y: -Math.random() * 200,
+                    speedX: (Math.random() - 0.5) * 2,
+                    speedY: Math.random() * 1.5 + 0.8,
+                    rotation: Math.random() * Math.PI * 2,
+                    scale: Math.random() * 0.8 + 0.4
+                };
+            }
+
+            function createLightDot() {
+                return {
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    size: Math.random() * 8 + 2,
+                    opacity: Math.random() * 0.6 + 0.3,
+                    speed: Math.random() * 0.7 + 0.3
+                };
+            }
+
+            // 绘制背景元素
+            function drawBackground() {
+                // 渐变背景
+                const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+                gradient.addColorStop(0, '#0f2137');
+                gradient.addColorStop(1, '#0a192f');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // 绘制星星
+                ctx.fillStyle = '#ffffff';
+                backgroundElements.stars.forEach(star => {
+                    ctx.beginPath();
+                    ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+                    ctx.fill();
+                    star.y = (star.y + star.speed) % canvas.height;
+                });
+
+                // 绘制气泡
+                backgroundElements.bubbles.forEach(bubble => {
+                    ctx.strokeStyle = `hsl(${bubble.hue}, 70%, 60%)`;
+                    ctx.lineWidth = 1.5;
+                    ctx.globalAlpha = 0.7;
+                    ctx.beginPath();
+                    ctx.arc(bubble.x, bubble.y, bubble.radius, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.globalAlpha = 1;
+                    bubble.y -= bubble.speed;
+                    if (bubble.y < -200) bubble.y = canvas.height + 200;
+                });
+
+                // 绘制闪光
+                ctx.globalCompositeOperation = 'lighter';
+                backgroundElements.sparkles.forEach((sparkle, index) => {
+                    ctx.fillStyle = `hsla(${(sparkle.angle * 180 / Math.PI) % 360}, 80%, 60%, ${sparkle.alpha})`;
+                    ctx.save();
+                    ctx.translate(sparkle.x, sparkle.y);
+                    ctx.rotate(sparkle.angle);
+                    ctx.fillRect(-3, -8, 6, 16); // 细长闪光形状
+                    ctx.restore();
+                    sparkle.angle += sparkle.speed * 0.03;
+                    sparkle.lifespan--;
+                    if (sparkle.lifespan < 0) {
+                        backgroundElements.sparkles[index] = createSparkle();
+                    }
+                });
+                ctx.globalCompositeOperation = 'source-over';
+
+                // 绘制花瓣（新增元素）
+                ctx.fillStyle = '#ff99a4'; // 淡粉色花瓣
+                backgroundElements.petals.forEach(petal => {
+                    ctx.save();
+                    ctx.translate(petal.x, petal.y);
+                    ctx.rotate(petal.rotation);
+                    ctx.scale(petal.scale, petal.scale);
+                    ctx.beginPath();
+                    ctx.moveTo(-5, 0);
+                    ctx.bezierCurveTo(-2, 4, 2, 4, 5, 0); // 花瓣形状
+                    ctx.fill();
+                    ctx.restore();
+                    petal.x += petal.speedX;
+                    petal.y += petal.speedY;
+                    if (petal.y > canvas.height + 100) petal.y = -200;
+                });
+
+                // 绘制光斑（新增元素）
+                ctx.globalAlpha = 0.4;
+                backgroundElements.lightDots.forEach(dot => {
+                    ctx.fillStyle = `rgba(255, 212, 249, ${dot.opacity})`; // 淡紫色光斑
+                    ctx.beginPath();
+                    ctx.arc(dot.x, dot.y, dot.size, 0, Math.PI * 2);
+                    ctx.fill();
+                    dot.y = (dot.y + dot.speed) % canvas.height;
+                });
+                ctx.globalAlpha = 1;
+            }
+
+            // 文字动画（纯CSS实现）
+            function animateText() {
+                setTimeout(() => {
+                    document.getElementById('mainTitle').style.opacity = 1;
+                    document.getElementById('mainTitle').style.transform = 'translateY(0)';
+                }, 1000);
+
+                setTimeout(() => {
+                    document.getElementById('subTitle').style.opacity = 1;
+                    document.getElementById('subTitle').style.transform = 'translateY(0)';
+                }, 1300);
+
+                setTimeout(() => {
+                    document.getElementById('encourageText').style.opacity = 1;
+                    document.getElementById('encourageText').style.transform = 'translateY(0)';
+                }, 1600);
+            }
+
+            // 动画循环
+            function animate() {
+                requestAnimationFrame(animate);
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                drawBackground();
+            }
+
+            // 初始化与窗口适配
+            window.addEventListener('load', () => {
+                animate();
+                animateText();
+            });
+
+            window.addEventListener('resize', () => {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                backgroundElements.stars = Array.from({ length: 300 }, createStar);
+                backgroundElements.bubbles = Array.from({ length: 120 }, createBubble);
+                // 其他元素重置...
+            });
+        </script>
+    </body>
+    </html>
